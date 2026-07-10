@@ -1,0 +1,8 @@
+# Build artifacts / local data — never commit secrets or the signing key DB.
+*.exe
+portal
+*.db
+*.db-shm
+*.db-wal
+/data/
+fly.toml.bak
