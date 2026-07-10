@@ -1,28 +1,31 @@
-# Fly.io config for the Lumina licensing portal.
-# Deploy:  fly launch --no-deploy   (creates the app, keep this file)
-#          fly volume create portal_data --size 1   (if using the built-in SQLite)
-#          fly deploy
-# Rename `app` to your unique Fly app name first.
-app = "lumina-portal"
-primary_region = "iad"   # pick one near you: fra, lhr, cdg, ams, etc.
+# fly.toml app configuration file generated for lumina-portal on 2026-07-10T20:56:58Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'lumina-portal'
+primary_region = 'iad'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  PORTAL_ADDR = "0.0.0.0:8090"
-  DATA_DIR = "/data"
-  # PAYMENT_URL / DEMO_DOWNLOAD_URL can be set here or as `fly secrets`.
+  DATA_DIR = '/data'
+  PORTAL_ADDR = '0.0.0.0:8090'
+
+[[mounts]]
+  source = 'portal_data'
+  destination = '/data'
 
 [http_service]
-  internal_port = 8090
+  internal_port = 8080
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 0   # set 1 to avoid cold starts on /api/latest
+  min_machines_running = 0
 
-# Persist the SQLite DB (incl. the Ed25519 signing key!). OMIT this block and set
-# DATABASE_URL as a secret if you instead use managed Postgres / Supabase.
-[[mounts]]
-  source = "portal_data"
-  destination = "/data"
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 256
