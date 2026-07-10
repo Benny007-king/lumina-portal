@@ -10,7 +10,10 @@ primary_region = "iad"   # pick one near you: fra, lhr, cdg, ams, etc.
   dockerfile = "Dockerfile"
 
 [env]
-  PORTAL_ADDR = "0.0.0.0:8090"
+  # PORT and internal_port MUST match — this is what Fly health-checks. The app
+  # binds 0.0.0.0:$PORT. (If Fly's launcher generated a fly.toml with a different
+  # internal_port, change it to match this, or vice-versa.)
+  PORT = "8090"
   DATA_DIR = "/data"
   # PAYMENT_URL / DEMO_DOWNLOAD_URL can be set here or as `fly secrets`.
 

@@ -14,7 +14,7 @@ RUN mkdir -p /data && chown -R 65532:65532 /data
 FROM gcr.io/distroless/static-debian12
 COPY --from=build /out/portal /portal
 COPY --from=perms --chown=65532:65532 /data /data
-ENV PORTAL_ADDR=0.0.0.0:8090 DATA_DIR=/data
+ENV PORT=8090 DATA_DIR=/data
 EXPOSE 8090
 USER 65532:65532
 ENTRYPOINT ["/portal"]

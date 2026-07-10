@@ -264,9 +264,13 @@ func main() {
 	http.HandleFunc("/auth/github", startOAuth(githubProvider()))
 	http.HandleFunc("/auth/github/callback", callbackOAuth(githubProvider()))
 
+	// Listen addr: explicit PORTAL_ADDR wins; otherwise honour PORT (which
+	// Fly/Render/Railway/Cloud Run inject) binding all interfaces; else loopback.
 	addr := "127.0.0.1:8090"
 	if v := os.Getenv("PORTAL_ADDR"); v != "" {
 		addr = v
+	} else if p := os.Getenv("PORT"); p != "" {
+		addr = "0.0.0.0:" + p
 	}
 	log.Printf("Lumina licensing portal listening on http://%s", addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {
