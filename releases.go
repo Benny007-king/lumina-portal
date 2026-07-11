@@ -30,6 +30,16 @@ const repoURL = "https://github.com/Benny007-king/-Lumina-NetOS"
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.24.2", "2026-07-11", "stable",
+		[]string{
+			"The post-update \"What's New\" dialog now shows only what changed in the latest update instead of the entire release history, and it resizes to the screen with its own scrollbar so a long changelog never runs off-screen",
+		},
+		repoURL + "/releases/tag/v1.24.2", "v1.24.2"},
+	{"1.24.1", "2026-07-11", "stable",
+		[]string{
+			"The licensing portal now honours the PORT environment variable and binds all interfaces, so it deploys cleanly to Fly.io / Render / Railway / Cloud Run (no more port-mismatch health-check timeouts)",
+		},
+		repoURL + "/releases/tag/v1.24.1", "v1.24.1"},
 	{"1.24.0", "2026-07-10", "stable",
 		[]string{
 			"The desktop \"Upgrade Now\" button and update checks can now point at a published, always-on website instead of a locally-running portal — set PUBLIC_PORTAL_URL on the appliance to your hosted portal URL",
