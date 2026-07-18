@@ -1,0 +1,27 @@
+# Render blueprint — free Docker web service for the Lumina licensing portal.
+#
+# All portal state (users, sessions, licenses, the Ed25519 signing seed) lives in
+# Postgres, so NO persistent disk is required — which is why this runs on Render's
+# free tier. You MUST set DATABASE_URL to your Supabase connection string in the
+# Render dashboard (it's marked sync:false below so it's entered as a secret, not
+# committed here). Reuse the SAME Supabase database as before so the existing
+# signing key + users are preserved; a fresh database mints a new key and breaks
+# already-issued licenses.
+#
+# Render injects PORT automatically and the app binds 0.0.0.0:$PORT.
+# Note: the free plan spins down after ~15 min idle (first request then cold-starts
+# in ~30-50s). Move to a paid instance or an always-on host if that UX matters.
+services:
+  - type: web
+    name: lumina-portal
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/latest
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # set in the Render dashboard = your Supabase URI
+      - key: DATA_DIR
+        value: /tmp          # unused with Postgres; keeps any incidental path writable
