@@ -30,6 +30,13 @@ const repoURL = "https://github.com/Benny007-king/-Lumina-NetOS"
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.26.1", "2026-09-30", "stable",
+		[]string{
+			"Security AI findings are now accurate: pfSense/OPNsense and other firewall brands count as firewalls (no false \"No perimeter firewall\" or flat paths through them); NetScaler build numbers are read correctly (no false Citrix Bleed on a patched build); unverified CVEs are no longer pinned on devices the scanner couldn't identify; servers with RDP aren't treated as user endpoints; repeated findings are merged per segment instead of per device",
+			"RDP / SSH from the browser (Docker appliance): RDP downloads a .rdp file that opens Remote Desktop on your computer, SSH copies the ssh command — the server can't open windows on your PC from its container",
+			"NetScaler HA pairs cloned from one template (same serial number) are no longer merged into one device",
+		},
+		repoURL + "/releases/tag/v1.26.1", "v1.26.1"},
 	{"1.26.0", "2026-09-30", "stable",
 		[]string{
 			"NetScaler HA pairs stay two devices side by side: the two nodes share floating SNIP/VIP addresses, which made the scanner merge them into one — the secondary then reappeared as a nameless \"HOST-…\" placeholder far from its partner. A rescan now keeps both named NetScalers and draws them as a pair",
