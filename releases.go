@@ -30,6 +30,12 @@ const repoURL = "https://github.com/Benny007-king/-Lumina-NetOS"
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.25.1", "2026-09-30", "stable",
+		[]string{
+			"Read-only (Viewer) accounts no longer see controls they can't use: scan, clear, delete, re-classify, connect, device dump, mark-as-solved, clear audit log and credential editing are hidden, and the credentials page shows a read-only notice",
+			"Fixed: saving a vendor credential with the secret left blank (e.g. only changing the username) wiped the stored password while the card still showed \"Set\" — a blank secret now keeps the stored one, as the form promises",
+		},
+		repoURL + "/releases/tag/v1.25.1", "v1.25.1"},
 	{"1.25.0", "2026-09-30", "stable",
 		[]string{
 			"Role permissions are now enforced by the engine, not just the screen: Viewers are read-only, Operators can scan, connect and manage assets but can't change system settings, and only administrators can change LDAP, session timeout, organization sync, switch modes or apply updates",
