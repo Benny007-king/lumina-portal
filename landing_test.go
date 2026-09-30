@@ -41,8 +41,8 @@ func TestReleasesTemplateRenders(t *testing.T) {
 			t.Errorf("releases page missing %q", want)
 		}
 	}
-	if len(releases) == 0 || releases[0].Version != "1.25.2" {
-		t.Errorf("latest release should be 1.25.2, got %+v", releases)
+	if len(releases) == 0 || releases[0].Version != "1.25.3" {
+		t.Errorf("latest release should be 1.25.3, got %+v", releases)
 	}
 }
 
