@@ -30,6 +30,14 @@ const repoURL = "https://github.com/Benny007-king/-Lumina-NetOS"
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.26.0", "2026-09-30", "stable",
+		[]string{
+			"NetScaler HA pairs stay two devices side by side: the two nodes share floating SNIP/VIP addresses, which made the scanner merge them into one — the secondary then reappeared as a nameless \"HOST-…\" placeholder far from its partner. A rescan now keeps both named NetScalers and draws them as a pair",
+			"No more false HA links: unnamed devices of the same vendor (e.g. a NetScaler with an ADM agent) were paired as HA because their placeholder names looked alike; wrong HA links stored by earlier scans are removed on the next scan",
+			"Phones using a private (randomized) Wi-Fi address — the default on iPhone and Android — are now recognised as mobile devices instead of unknown hosts",
+			"New iPhone and tower-server icons, and zoom in / zoom out buttons in the corner of the map",
+		},
+		repoURL + "/releases/tag/v1.26.0", "v1.26.0"},
 	{"1.25.3", "2026-09-30", "stable",
 		[]string{
 			"Scan results now appear when the scan actually finishes: the map used to stop waiting after a few seconds (discovered assets are only merged at the end of the whole crawl, which can take minutes), so it showed an empty map. The engine now reports whether a scan is running, the map waits for it, and a scan still in progress is picked up again after a refresh or when you return to the map",
