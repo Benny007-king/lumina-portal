@@ -15,7 +15,8 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib" // Postgres / Supabase driver (pure Go)
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib" // Postgres / Supabase driver (pure Go)
 	_ "modernc.org/sqlite"             // SQLite driver (pure Go)
 )
 
@@ -121,9 +122,17 @@ func initStore(sqlitePath string) error {
 
 	if url := strings.TrimSpace(os.Getenv("DATABASE_URL")); url != "" {
 		dbDialect = "postgres"
-		if conn, err = sql.Open("pgx", url); err != nil {
-			return err
+		cfg, perr := pgx.ParseConfig(url)
+		if perr != nil {
+			return perr
 		}
+		// Poolers (Supabase Supavisor, PgBouncer) hand one server connection to many
+		// clients, so pgx's default cache of NAMED prepared statements collides between
+		// instances — e.g. a new deploy starting while the old one runs fails with
+		// "prepared statement stmtcache_… already exists" (SQLSTATE 42P05). Exec mode
+		// uses unnamed statements, which are safe behind any pooler.
+		cfg.DefaultQueryExecMode = pgx.QueryExecModeExec
+		conn = stdlib.OpenDB(*cfg)
 		conn.SetMaxOpenConns(10)
 		conn.SetMaxIdleConns(2)
 		conn.SetConnMaxLifetime(30 * time.Minute)

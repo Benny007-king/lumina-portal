@@ -30,6 +30,12 @@ const repoURL = "https://github.com/Benny007-king/-Lumina-NetOS"
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.25.2", "2026-09-30", "stable",
+		[]string{
+			"When your session ends (it expired, or the engine restarted), the app now returns you to the sign-in screen with a clear message — previously every screen silently showed empty data, which looked like lost credentials and a broken scan",
+			"The licensing portal and the org hub now work behind connection poolers such as Supabase's: a second instance starting alongside a running one (e.g. during a deploy) no longer fails with \"prepared statement … already exists\"",
+		},
+		repoURL + "/releases/tag/v1.25.2", "v1.25.2"},
 	{"1.25.1", "2026-09-30", "stable",
 		[]string{
 			"Read-only (Viewer) accounts no longer see controls they can't use: scan, clear, delete, re-classify, connect, device dump, mark-as-solved, clear audit log and credential editing are hidden, and the credentials page shows a read-only notice",
