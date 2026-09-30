@@ -30,6 +30,13 @@ const repoURL = "https://github.com/Benny007-king/-Lumina-NetOS"
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.27.0", "2026-09-30", "stable",
+		[]string{
+			"Local, offline Security AI: \"Explain my posture\" and the AI chat run on a model inside your own appliance (Ollama, llama3.2) — network data never leaves your site. Enable it with docker compose --profile ai up -d",
+			"Much better AI answers: the model now gets each device's identity, whether it was actually authenticated, and every serious finding grouped by device — so its remediation plan names the right device and the concrete fix instead of generic advice, and it is instructed never to invent devices, versions or CVEs",
+			"The AI chat shows a \"thinking\" indicator while the local model works, and local AI answers no longer time out on CPU-only machines",
+		},
+		repoURL + "/releases/tag/v1.27.0", "v1.27.0"},
 	{"1.26.1", "2026-09-30", "stable",
 		[]string{
 			"Security AI findings are now accurate: pfSense/OPNsense and other firewall brands count as firewalls (no false \"No perimeter firewall\" or flat paths through them); NetScaler build numbers are read correctly (no false Citrix Bleed on a patched build); unverified CVEs are no longer pinned on devices the scanner couldn't identify; servers with RDP aren't treated as user endpoints; repeated findings are merged per segment instead of per device",
