@@ -128,19 +128,7 @@ const portalHTML = `<!DOCTYPE html>
   (function(){
     var params = new URLSearchParams(window.location.search);
     var err = params.get('oauth_error');
-    if(err){ showErr(err); history.replaceState({}, '', '/'); }
-    var claim = params.get('claim');
-    if(claim){
-      fetch('/api/claim?id=' + encodeURIComponent(claim)).then(function(r){return r.json();}).then(function(d){
-        history.replaceState({}, '', '/');
-        if(d.licenseKey){
-          document.getElementById('license').textContent = d.licenseKey;
-          document.getElementById('org-label').textContent = d.org + ' · ' + d.email;
-          document.getElementById('auth-view').style.display='none';
-          document.getElementById('key-view').style.display='block';
-        } else { showErr(d.error || 'Could not retrieve your license key.'); }
-      }).catch(function(){ showErr('Could not retrieve your license key.'); });
-    }
+    if(err){ showErr(err); history.replaceState({}, '', '/signup'); }
   })();
 
   // Already signed in? (cookie session) → show the key view straight away.

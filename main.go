@@ -36,6 +36,14 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 const sessionCookie = "lumina_session"
 
+// isHTTPS reports whether the browser reached us over HTTPS. PaaS hosts (Render,
+// Fly, Cloud Run) terminate TLS at their edge and forward plain HTTP, so r.TLS is
+// nil there — honour X-Forwarded-Proto too. Trusting a spoofed header is harmless:
+// it can only make a cookie MORE restrictive (Secure).
+func isHTTPS(r *http.Request) bool {
+	return r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https")
+}
+
 // setSession issues a session for the user and drops an HttpOnly cookie so the
 // login persists across visits (Secure when served over TLS). Callers MUST
 // check the error: previously a failure here was swallowed and the caller
@@ -49,7 +57,7 @@ func setSession(w http.ResponseWriter, r *http.Request, email string) error {
 	http.SetCookie(w, &http.Cookie{
 		Name: sessionCookie, Value: tok, Path: "/",
 		HttpOnly: true, SameSite: http.SameSiteLaxMode,
-		Secure:   r.TLS != nil,
+		Secure:   isHTTPS(r),
 		MaxAge:   60 * 60 * 24 * 30, // 30 days
 	})
 	return nil
@@ -229,13 +237,14 @@ func main() {
 		log.Fatalf("store init failed: %v", err)
 	}
 
-	// Expire stale sessions on boot, then hourly.
+	// Expire stale sessions on boot, then hourly (plus abandoned OAuth states).
 	sweepSessions()
 	go func() {
 		t := time.NewTicker(time.Hour)
 		defer t.Stop()
 		for range t.C {
 			sweepSessions()
+			sweepOAuth()
 		}
 	}()
 
@@ -258,7 +267,6 @@ func main() {
 
 	// OAuth (Google / GitHub) — active only when client credentials are set.
 	http.HandleFunc("/api/oauth-config", oauthConfigHandler)
-	http.HandleFunc("/api/claim", claimHandler)
 	http.HandleFunc("/auth/google", startOAuth(googleProvider()))
 	http.HandleFunc("/auth/google/callback", callbackOAuth(googleProvider()))
 	http.HandleFunc("/auth/github", startOAuth(githubProvider()))

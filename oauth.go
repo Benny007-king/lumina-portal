@@ -25,9 +25,9 @@ import (
      GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET
      PORTAL_BASE_URL  (default http://localhost:8090)
 
-   After a successful callback the user is provisioned and their license
-   key is stashed under a one-time "claim" id; the browser is redirected
-   to /?claim=<id> and the SPA fetches the key via /api/claim.
+   After a successful callback the user is provisioned, the session cookie
+   is set directly on the callback response, and the browser lands on
+   /signup, which shows the license from the session (/api/me).
    ======================================================================
 */
 
@@ -71,7 +71,7 @@ func portalBaseURL() string {
 	return "http://localhost:8090"
 }
 
-// --- short-lived CSRF state + one-time license claim stores ---
+// --- short-lived CSRF state store ---
 
 type expiring struct {
 	value   string
@@ -79,18 +79,12 @@ type expiring struct {
 }
 
 var (
-	oauthMu     sync.Mutex
-	stateStore  = map[string]expiring{}   // state -> provider name
-	claimStore  = map[string]claimRecord{} // claim id -> license payload
+	oauthMu    sync.Mutex
+	stateStore = map[string]expiring{} // state -> provider name
 )
 
-type claimRecord struct {
-	user    User
-	expires time.Time
-}
-
-// randID returns a fresh random token (used as the OAuth CSRF state and as the
-// post-login claim ID). A failed read from the OS CSPRNG must never fall
+// randID returns a fresh random token (used as the OAuth CSRF state). A failed
+// read from the OS CSPRNG must never fall
 // through to a partially-random/predictable value — panic (net/http recovers
 // per-request and 500s) rather than mint a guessable state token.
 func randID() string {
@@ -120,24 +114,22 @@ func takeState(id string) (string, bool) {
 	return s.value, true
 }
 
-func putClaim(u User) string {
-	id := randID()
-	oauthMu.Lock()
-	claimStore[id] = claimRecord{u, time.Now().Add(5 * time.Minute)}
-	oauthMu.Unlock()
-	return id
-}
-
-func takeClaim(id string) (User, bool) {
+// sweepOAuth drops abandoned OAuth states, which are otherwise only removed
+// when redeemed.
+func sweepOAuth() {
+	now := time.Now()
 	oauthMu.Lock()
 	defer oauthMu.Unlock()
-	c, ok := claimStore[id]
-	delete(claimStore, id)
-	if !ok || time.Now().After(c.expires) {
-		return User{}, false
+	for k, s := range stateStore {
+		if now.After(s.expires) {
+			delete(stateStore, k)
+		}
 	}
-	return c.user, true
 }
+
+// stateCookie binds the OAuth state to the browser that started the flow, so a
+// callback URL minted in someone else's browser can't log this one in (login CSRF).
+const stateCookie = "lumina_oauth_state"
 
 // --- handlers ---
 
@@ -152,10 +144,23 @@ func oauthConfigHandler(w http.ResponseWriter, r *http.Request) {
 func startOAuth(p oauthProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !p.configured() {
-			http.Redirect(w, r, "/?oauth_error="+url.QueryEscape(p.name+" sign-in is not configured on this server"), http.StatusFound)
+			http.Redirect(w, r, "/signup?oauth_error="+url.QueryEscape(p.name+" sign-in is not configured on this server"), http.StatusFound)
+			return
+		}
+		// Start on the canonical host: the state cookie is host-only and the
+		// provider returns to portalBaseURL(), so a flow begun on another name
+		// (127.0.0.1 vs localhost, onrender.com vs a custom domain) would never
+		// see its cookie.
+		if base, err := url.Parse(portalBaseURL()); err == nil && base.Host != "" && !strings.EqualFold(base.Host, requestHost(r)) {
+			http.Redirect(w, r, portalBaseURL()+r.URL.Path, http.StatusFound)
 			return
 		}
 		state := putState(p.name)
+		http.SetCookie(w, &http.Cookie{
+			Name: stateCookie, Value: state, Path: "/auth/",
+			HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: isHTTPS(r),
+			MaxAge: 600,
+		})
 		q := url.Values{}
 		q.Set("client_id", p.clientID)
 		q.Set("redirect_uri", portalBaseURL()+"/auth/"+p.name+"/callback")
@@ -173,51 +178,53 @@ func startOAuth(p oauthProvider) http.HandlerFunc {
 func callbackOAuth(p oauthProvider) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if errMsg := r.URL.Query().Get("error"); errMsg != "" {
-			http.Redirect(w, r, "/?oauth_error="+url.QueryEscape(errMsg), http.StatusFound)
+			http.Redirect(w, r, "/signup?oauth_error="+url.QueryEscape(errMsg), http.StatusFound)
 			return
 		}
 		code := r.URL.Query().Get("code")
 		state := r.URL.Query().Get("state")
+		c, cerr := r.Cookie(stateCookie)
+		http.SetCookie(w, &http.Cookie{Name: stateCookie, Value: "", Path: "/auth/", HttpOnly: true, MaxAge: -1})
 		provider, ok := takeState(state)
-		if !ok || provider != p.name || code == "" {
-			http.Redirect(w, r, "/?oauth_error="+url.QueryEscape("invalid or expired OAuth state"), http.StatusFound)
+		if !ok || provider != p.name || code == "" || cerr != nil || c.Value != state {
+			http.Redirect(w, r, "/signup?oauth_error="+url.QueryEscape("invalid or expired OAuth state"), http.StatusFound)
 			return
 		}
 
 		token, err := p.exchangeCode(code)
 		if err != nil {
-			http.Redirect(w, r, "/?oauth_error="+url.QueryEscape("token exchange failed: "+err.Error()), http.StatusFound)
+			http.Redirect(w, r, "/signup?oauth_error="+url.QueryEscape("token exchange failed: "+err.Error()), http.StatusFound)
 			return
 		}
 		email, err := p.fetchEmail(token)
 		if err != nil || email == "" {
-			http.Redirect(w, r, "/?oauth_error="+url.QueryEscape("could not read your email from "+p.name), http.StatusFound)
+			http.Redirect(w, r, "/signup?oauth_error="+url.QueryEscape("could not read your email from "+p.name), http.StatusFound)
 			return
 		}
 
 		user, err := findOrCreateOAuthUser(email, "")
 		if err != nil {
-			http.Redirect(w, r, "/?oauth_error="+url.QueryEscape(err.Error()), http.StatusFound)
+			http.Redirect(w, r, "/signup?oauth_error="+url.QueryEscape(err.Error()), http.StatusFound)
 			return
 		}
-		claim := putClaim(*user)
-		http.Redirect(w, r, "/?claim="+url.QueryEscape(claim), http.StatusFound)
+		// Sign in right here, in the browser that started (and proved, via the
+		// state cookie) this flow. A bearer "claim" link in between could be sent
+		// to someone else and log THEM into this account.
+		if err := setSession(w, r, user.Email); err != nil {
+			log.Printf("session creation failed after oauth email=%q: %v", user.Email, err)
+			http.Redirect(w, r, "/signup?oauth_error="+url.QueryEscape("sign-in failed; please try again"), http.StatusFound)
+			return
+		}
+		http.Redirect(w, r, "/signup", http.StatusFound)
 	}
 }
 
-func claimHandler(w http.ResponseWriter, r *http.Request) {
-	cors(w)
-	u, ok := takeClaim(r.URL.Query().Get("id"))
-	if !ok {
-		writeJSON(w, 404, map[string]string{"error": "claim expired or not found"})
-		return
+// requestHost is the host the browser used (a proxy may pass it on separately).
+func requestHost(r *http.Request) string {
+	if h := r.Header.Get("X-Forwarded-Host"); h != "" {
+		return h
 	}
-	if err := setSession(w, r, u.Email); err != nil {
-		log.Printf("session creation failed after oauth claim email=%q: %v", u.Email, err)
-		writeJSON(w, 500, map[string]string{"error": "sign-in failed; please try again"})
-		return
-	}
-	writeJSON(w, 200, map[string]string{"org": u.OrgName, "email": u.Email, "licenseKey": u.LicenseToken})
+	return r.Host
 }
 
 // --- provider HTTP exchanges ---

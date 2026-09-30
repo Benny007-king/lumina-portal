@@ -30,6 +30,15 @@ const repoURL = "https://github.com/Benny007-king/-Lumina-NetOS"
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.25.0", "2026-09-30", "stable",
+		[]string{
+			"Role permissions are now enforced by the engine, not just the screen: Viewers are read-only, Operators can scan, connect and manage assets but can't change system settings, and only administrators can change LDAP, session timeout, organization sync, switch modes or apply updates",
+			"Security hardening from a full QA review: only the local administrator can change the local admin password (and must confirm the current one); the factory-password lockdown now covers every screen; password and two-factor attempts are limited per user even under bursts of parallel requests; signing out now ends the session on the server; exported PDF/CSV reports safely escape device-supplied text; a portal error can no longer wipe the list of revoked license keys",
+			"Licensing portal: Google/GitHub sign-in now completes (it used to stop on the home page) and is bound to the browser that started it; the session cookie is always Secure behind HTTPS",
+			"Fixes: Security AI no longer lists the same server exposure twice (which inflated the critical count); a rare engine-wide freeze when opening SSH/RDP during a scan; overlapping scan-progress refreshes; organization-sync timing races; failed actions now show the real reason instead of silently doing nothing",
+			"The desktop app now uses the hosted licensing portal by default, so sign-up, activation and update checks work out of the box",
+		},
+		repoURL + "/releases/tag/v1.25.0", "v1.25.0"},
 	{"1.24.2", "2026-07-11", "stable",
 		[]string{
 			"The post-update \"What's New\" dialog now shows only what changed in the latest update instead of the entire release history, and it resizes to the screen with its own scrollbar so a long changelog never runs off-screen",

@@ -159,10 +159,11 @@ func recordPayment(email, plan, status, provider, customerID, subID string, amou
 	res, err := pdb.Exec(rb(`UPDATE payments SET plan=?, status=?, provider=?, customer_id=?,
         amount_cents=?, currency=?, updated=? WHERE subscription_id=? AND subscription_id<>''`),
 		plan, status, provider, customerID, amountCents, currency, now, subID)
-	if err == nil {
-		if n, _ := res.RowsAffected(); n > 0 {
-			return nil
-		}
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n > 0 {
+		return nil
 	}
 	_, err = pdb.Exec(rb(`INSERT INTO payments
         (email, plan, status, provider, customer_id, subscription_id, amount_cents, currency, created, updated)
