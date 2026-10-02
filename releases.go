@@ -39,6 +39,13 @@ const installerURL = downloadsRepo + "/releases/latest/download/LuminaNetOS-Setu
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.28.0", "2026-10-02", "stable",
+		[]string{
+			"The map connects each device to its real default gateway instead of guessing: the scanner reads the routing table of every device it can log into (SSH, WinRM, SNMP) and of the computer running the scan, and links the device to whoever owns that gateway address",
+			"Devices it can't log into follow the gateway the readable devices on the same segment use; a gateway router that exposes no ports (and so was missed by the sweep) is still added because routing tables prove it exists",
+			"Link details show where each connection came from: read from the device, shared by the segment, or inferred when no routing data exists",
+		},
+		downloadsRepo + "/releases/tag/v1.28.0", "v1.28.0"},
 	{"1.27.2", "2026-10-02", "stable",
 		[]string{
 			"The installer is now downloadable: after signing in, \"Download Lumina NetOS\" fetches the Windows installer directly (it used to open an empty or 404 GitHub page)",
