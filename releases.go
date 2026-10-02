@@ -39,6 +39,15 @@ const installerURL = downloadsRepo + "/releases/latest/download/LuminaNetOS-Setu
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.29.0", "2026-10-02", "stable",
+		[]string{
+			"Automatic updates for the desktop app: at startup it offers the new version and installs it in place — no uninstall/reinstall. Updates are signed and the app only accepts packages signed by Lumina. (Install 1.29.0 once over your current version to get this.)",
+			"SSH single sign-on: Connect → SSH logs in with the credential the device was scanned with, with no password prompt. The password is handed to the SSH client through a one-time token and never written to a command line, environment variable or credential store",
+			"Safer scans: an identified device is only tried with its own vendor's credential. Trying every stored password on it tripped pfSense's brute-force protection, which then blocked the scanning computer",
+			"The map says why a login failed (credential rejected / connection reset / SSH port not answering) instead of just \"no credentials\"",
+			"The desktop app's engine stops when the app closes (no more leftover core.exe holding port 8080), and the workstation node uses the real LAN adapter",
+		},
+		downloadsRepo + "/releases/tag/v1.29.0", "v1.29.0"},
 	{"1.28.1", "2026-10-02", "stable",
 		[]string{
 			"Fixes the installed Windows app failing at the login screen with \"The Core Engine returned an unreadable response\": the installed app now talks to its local engine (it was sending requests to its own page), and the engine accepts the installed app's requests",
