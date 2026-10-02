@@ -39,6 +39,13 @@ const installerURL = downloadsRepo + "/releases/latest/download/LuminaNetOS-Setu
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.28.1", "2026-10-02", "stable",
+		[]string{
+			"Fixes the installed Windows app failing at the login screen with \"The Core Engine returned an unreadable response\": the installed app now talks to its local engine (it was sending requests to its own page), and the engine accepts the installed app's requests",
+			"The login screen no longer shows \"Demo Environment\" and hides the LDAP sign-in on a production install when the app is opened before its engine finished starting",
+			"The login screen shows the real version instead of v1.0.0",
+		},
+		downloadsRepo + "/releases/tag/v1.28.1", "v1.28.1"},
 	{"1.28.0", "2026-10-02", "stable",
 		[]string{
 			"The map connects each device to its real default gateway instead of guessing: the scanner reads the routing table of every device it can log into (SSH, WinRM, SNMP) and of the computer running the scan, and links the device to whoever owns that gateway address",
