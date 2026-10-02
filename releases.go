@@ -39,6 +39,12 @@ const installerURL = downloadsRepo + "/releases/latest/download/LuminaNetOS-Setu
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.30.0", "2026-10-02", "stable",
+		[]string{
+			"RDP single sign-on: Connect → RDP logs into Windows servers with the credential they were scanned with. The password is placed in Windows Credential Manager for that host only, for this logon only, and removed again 90 seconds later; a credential you saved yourself is never touched",
+			"Fixes SSH single sign-on from the map: 1.29.0 still asked for the password because the map always sends the account name, which skipped the password lookup",
+		},
+		downloadsRepo + "/releases/tag/v1.30.0", "v1.30.0"},
 	{"1.29.0", "2026-10-02", "stable",
 		[]string{
 			"Automatic updates for the desktop app: at startup it offers the new version and installs it in place — no uninstall/reinstall. Updates are signed and the app only accepts packages signed by Lumina. (Install 1.29.0 once over your current version to get this.)",
