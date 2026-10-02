@@ -30,6 +30,12 @@ const repoURL = "https://github.com/Benny007-king/-Lumina-NetOS"
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.27.1", "2026-10-02", "stable",
+		[]string{
+			"The desktop app now uses the same local AI as the appliance when both run on one machine — the model is published on this computer's loopback address only (never on the network, Ollama has no login)",
+			"Clearer AI remediation text: fixes that are instructions no longer read \"upgrade to Apply …\", and grouped findings carry each device's IP so the AI names the right one",
+		},
+		repoURL + "/releases/tag/v1.27.1", "v1.27.1"},
 	{"1.27.0", "2026-09-30", "stable",
 		[]string{
 			"Local, offline Security AI: \"Explain my posture\" and the AI chat run on a model inside your own appliance (Ollama, llama3.2) — network data never leaves your site. Enable it with docker compose --profile ai up -d",
