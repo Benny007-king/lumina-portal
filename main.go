@@ -210,9 +210,9 @@ func pubkeyHandler(w http.ResponseWriter, r *http.Request) {
 // the success view), so the public site can't be downloaded from without signing
 // up. The real URL is injected here (env-configurable).
 func signupHandler(w http.ResponseWriter, r *http.Request) {
-	dl := os.Getenv("DEMO_DOWNLOAD_URL")
+	dl := os.Getenv("DOWNLOAD_URL")
 	if dl == "" {
-		dl = repoURL + "/releases/latest"
+		dl = installerURL
 	}
 	html := strings.ReplaceAll(portalHTML, "%%DOWNLOAD_URL%%", dl)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

@@ -12,8 +12,11 @@ import (
    ----------------------------------------------------------------------
    The portal is the source of truth for "what's the latest version".
    The desktop engine polls /api/latest and compares to its own build.
-   Releases map 1:1 to git tags (v<version>); DownloadURL points at the
-   GitHub release page for that tag.
+   Releases map 1:1 to git tags (v<version>). The source repo is private, so
+   installers are published as GitHub Releases on the PUBLIC downloads repo
+   (installers + notes only, no source); DownloadURL points at that release.
+   Versions before 1.27.2 were never published as installers and link to the
+   downloads repo's release list instead.
    ======================================================================
 */
 
@@ -26,30 +29,42 @@ type Release struct {
 	GitTag      string   `json:"gitTag"`
 }
 
-const repoURL = "https://github.com/Benny007-king/-Lumina-NetOS"
+// downloadsRepo is the PUBLIC repo that hosts the installers (the source repo
+// is private, so its release pages 404 for customers).
+const downloadsRepo = "https://github.com/Benny007-king/lumina-netos-releases"
+
+// installerURL is a direct download of the newest Windows installer: every
+// release uploads it under this stable asset name.
+const installerURL = downloadsRepo + "/releases/latest/download/LuminaNetOS-Setup-x64.exe"
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.27.2", "2026-10-02", "stable",
+		[]string{
+			"The installer is now downloadable: after signing in, \"Download Lumina NetOS\" fetches the Windows installer directly (it used to open an empty or 404 GitHub page)",
+			"Correct map for segments behind a firewall: hosts on a firewall's LAN connect to the firewall itself, even when one of them happens to own the .1 address (they used to be drawn chained one behind another), and the old wrong links are cleared on the next scan",
+		},
+		downloadsRepo + "/releases/tag/v1.27.2", "v1.27.2"},
 	{"1.27.1", "2026-10-02", "stable",
 		[]string{
 			"The desktop app now uses the same local AI as the appliance when both run on one machine — the model is published on this computer's loopback address only (never on the network, Ollama has no login)",
 			"Clearer AI remediation text: fixes that are instructions no longer read \"upgrade to Apply …\", and grouped findings carry each device's IP so the AI names the right one",
 		},
-		repoURL + "/releases/tag/v1.27.1", "v1.27.1"},
+		downloadsRepo + "/releases", "v1.27.1"},
 	{"1.27.0", "2026-09-30", "stable",
 		[]string{
 			"Local, offline Security AI: \"Explain my posture\" and the AI chat run on a model inside your own appliance (Ollama, llama3.2) — network data never leaves your site. Enable it with docker compose --profile ai up -d",
 			"Much better AI answers: the model now gets each device's identity, whether it was actually authenticated, and every serious finding grouped by device — so its remediation plan names the right device and the concrete fix instead of generic advice, and it is instructed never to invent devices, versions or CVEs",
 			"The AI chat shows a \"thinking\" indicator while the local model works, and local AI answers no longer time out on CPU-only machines",
 		},
-		repoURL + "/releases/tag/v1.27.0", "v1.27.0"},
+		downloadsRepo + "/releases", "v1.27.0"},
 	{"1.26.1", "2026-09-30", "stable",
 		[]string{
 			"Security AI findings are now accurate: pfSense/OPNsense and other firewall brands count as firewalls (no false \"No perimeter firewall\" or flat paths through them); NetScaler build numbers are read correctly (no false Citrix Bleed on a patched build); unverified CVEs are no longer pinned on devices the scanner couldn't identify; servers with RDP aren't treated as user endpoints; repeated findings are merged per segment instead of per device",
 			"RDP / SSH from the browser (Docker appliance): RDP downloads a .rdp file that opens Remote Desktop on your computer, SSH copies the ssh command — the server can't open windows on your PC from its container",
 			"NetScaler HA pairs cloned from one template (same serial number) are no longer merged into one device",
 		},
-		repoURL + "/releases/tag/v1.26.1", "v1.26.1"},
+		downloadsRepo + "/releases", "v1.26.1"},
 	{"1.26.0", "2026-09-30", "stable",
 		[]string{
 			"NetScaler HA pairs stay two devices side by side: the two nodes share floating SNIP/VIP addresses, which made the scanner merge them into one — the secondary then reappeared as a nameless \"HOST-…\" placeholder far from its partner. A rescan now keeps both named NetScalers and draws them as a pair",
@@ -57,26 +72,26 @@ var releases = []Release{
 			"Phones using a private (randomized) Wi-Fi address — the default on iPhone and Android — are now recognised as mobile devices instead of unknown hosts",
 			"New iPhone and tower-server icons, and zoom in / zoom out buttons in the corner of the map",
 		},
-		repoURL + "/releases/tag/v1.26.0", "v1.26.0"},
+		downloadsRepo + "/releases", "v1.26.0"},
 	{"1.25.3", "2026-09-30", "stable",
 		[]string{
 			"Scan results now appear when the scan actually finishes: the map used to stop waiting after a few seconds (discovered assets are only merged at the end of the whole crawl, which can take minutes), so it showed an empty map. The engine now reports whether a scan is running, the map waits for it, and a scan still in progress is picked up again after a refresh or when you return to the map",
 			"Only one scan runs at a time — starting another while one is in progress follows the running scan instead",
 			"Refreshing the page no longer signs you out: the session is kept for the browser tab (and cleared when the tab closes)",
 		},
-		repoURL + "/releases/tag/v1.25.3", "v1.25.3"},
+		downloadsRepo + "/releases", "v1.25.3"},
 	{"1.25.2", "2026-09-30", "stable",
 		[]string{
 			"When your session ends (it expired, or the engine restarted), the app now returns you to the sign-in screen with a clear message — previously every screen silently showed empty data, which looked like lost credentials and a broken scan",
 			"The licensing portal and the org hub now work behind connection poolers such as Supabase's: a second instance starting alongside a running one (e.g. during a deploy) no longer fails with \"prepared statement … already exists\"",
 		},
-		repoURL + "/releases/tag/v1.25.2", "v1.25.2"},
+		downloadsRepo + "/releases", "v1.25.2"},
 	{"1.25.1", "2026-09-30", "stable",
 		[]string{
 			"Read-only (Viewer) accounts no longer see controls they can't use: scan, clear, delete, re-classify, connect, device dump, mark-as-solved, clear audit log and credential editing are hidden, and the credentials page shows a read-only notice",
 			"Fixed: saving a vendor credential with the secret left blank (e.g. only changing the username) wiped the stored password while the card still showed \"Set\" — a blank secret now keeps the stored one, as the form promises",
 		},
-		repoURL + "/releases/tag/v1.25.1", "v1.25.1"},
+		downloadsRepo + "/releases", "v1.25.1"},
 	{"1.25.0", "2026-09-30", "stable",
 		[]string{
 			"Role permissions are now enforced by the engine, not just the screen: Viewers are read-only, Operators can scan, connect and manage assets but can't change system settings, and only administrators can change LDAP, session timeout, organization sync, switch modes or apply updates",
@@ -85,242 +100,242 @@ var releases = []Release{
 			"Fixes: Security AI no longer lists the same server exposure twice (which inflated the critical count); a rare engine-wide freeze when opening SSH/RDP during a scan; overlapping scan-progress refreshes; organization-sync timing races; failed actions now show the real reason instead of silently doing nothing",
 			"The desktop app now uses the hosted licensing portal by default, so sign-up, activation and update checks work out of the box",
 		},
-		repoURL + "/releases/tag/v1.25.0", "v1.25.0"},
+		downloadsRepo + "/releases", "v1.25.0"},
 	{"1.24.2", "2026-07-11", "stable",
 		[]string{
 			"The post-update \"What's New\" dialog now shows only what changed in the latest update instead of the entire release history, and it resizes to the screen with its own scrollbar so a long changelog never runs off-screen",
 		},
-		repoURL + "/releases/tag/v1.24.2", "v1.24.2"},
+		downloadsRepo + "/releases", "v1.24.2"},
 	{"1.24.1", "2026-07-11", "stable",
 		[]string{
 			"The licensing portal now honours the PORT environment variable and binds all interfaces, so it deploys cleanly to Fly.io / Render / Railway / Cloud Run (no more port-mismatch health-check timeouts)",
 		},
-		repoURL + "/releases/tag/v1.24.1", "v1.24.1"},
+		downloadsRepo + "/releases", "v1.24.1"},
 	{"1.24.0", "2026-07-10", "stable",
 		[]string{
 			"The desktop \"Upgrade Now\" button and update checks can now point at a published, always-on website instead of a locally-running portal — set PUBLIC_PORTAL_URL on the appliance to your hosted portal URL",
 			"Fixes the releases/website not reflecting the newest version: the portal image is now rebuilt on every release so this page always shows the latest",
 		},
-		repoURL + "/releases/tag/v1.24.0", "v1.24.0"},
+		downloadsRepo + "/releases", "v1.24.0"},
 	{"1.23.1", "2026-07-04", "stable",
 		[]string{
 			"Internal cleanup (over-engineering pass): removed a redundant field from the organization-sync pull response; no behaviour change",
 		},
-		repoURL + "/releases/tag/v1.23.1", "v1.23.1"},
+		downloadsRepo + "/releases", "v1.23.1"},
 	{"1.23.0", "2026-07-04", "stable",
 		[]string{
 			"The credential master-key protector can now be rotated with no downtime — set the new secret plus LUMINA_MASTER_KEY_OLD, start once to re-seal, then drop the old one",
 			"Licensing-portal sessions now expire server-side after 30 days and are swept periodically, so an old session cookie can't be replayed indefinitely",
 		},
-		repoURL + "/releases/tag/v1.23.0", "v1.23.0"},
+		downloadsRepo + "/releases", "v1.23.0"},
 	{"1.22.0", "2026-07-04", "stable",
 		[]string{
 			"Organization sync now scales to large estates: members pull only the assets that changed since their last sync (with a periodic full reconcile) instead of the whole map every 30 seconds, and the hub writes each batch in a single transaction",
 			"The hub also garbage-collects assets that have left the estate, so the shared organization map no longer grows forever",
 		},
-		repoURL + "/releases/tag/v1.22.0", "v1.22.0"},
+		downloadsRepo + "/releases", "v1.22.0"},
 	{"1.21.0", "2026-07-04", "stable",
 		[]string{
 			"License keys can now be revoked — if a key leaks, click \"Revoke & Reissue Key\" on your account page to kill the old one and get a fresh key, without re-keying the whole organization",
 			"Engines/hubs poll the portal's revocation list and reject any organization-sync request that uses a revoked key (within ~15 minutes); the last-known list is cached so the check keeps working offline",
 		},
-		repoURL + "/releases/tag/v1.21.0", "v1.21.0"},
+		downloadsRepo + "/releases", "v1.21.0"},
 	{"1.20.0", "2026-07-04", "stable",
 		[]string{
 			"Organization settings sync (LDAP + MFA) can now be gated by a shared admin token: set the same LUMINA_ORG_ADMIN_TOKEN on the hub and every member and only holders of that token can push or pull the org's directory config and MFA enrollments",
 			"This stops a member who only has the product licence key from rewriting org-wide LDAP or planting an MFA enrollment. The asset map still syncs on the licence alone; leaving the token unset keeps the previous behaviour (with a startup warning)",
 		},
-		repoURL + "/releases/tag/v1.20.0", "v1.20.0"},
+		downloadsRepo + "/releases", "v1.20.0"},
 	{"1.19.0", "2026-07-04", "stable",
 		[]string{
 			"MFA/TOTP secrets are now encrypted at rest — on each device and on the organization hub — with the same key that already protects stored device credentials, so a stolen database no longer exposes live authenticator seeds",
 			"Backward compatible: existing 2FA secrets keep working and are re-sealed transparently; the raw seed only exists in memory and over the encrypted, certificate-pinned org-sync channel",
 		},
-		repoURL + "/releases/tag/v1.19.0", "v1.19.0"},
+		downloadsRepo + "/releases", "v1.19.0"},
 	{"1.18.0", "2026-07-04", "stable",
 		[]string{
 			"Security: password hashing raised to 600,000 PBKDF2-SHA256 iterations (OWASP 2023) using the standard library, with a self-describing hash format so existing passwords keep working and can be re-costed later without a reset",
 			"Security: enabling two-factor now verifies a live authenticator code before it activates (you can no longer lock yourself out); org-sync reconfiguration is restricted to administrators so a low-privilege session can't force a hub-certificate re-pin; Google sign-in now requires a Google-verified email",
 			"Robustness + cleanup: the SSH interactive shell reader no longer shares one buffer across concurrent reads; the login rate-limit table is swept so it can't grow unbounded on a long-running appliance; the manual-update screen only makes an http(s) download link clickable; removed several dead functions",
 		},
-		repoURL + "/releases/tag/v1.18.0", "v1.18.0"},
+		downloadsRepo + "/releases", "v1.18.0"},
 	{"1.17.1", "2026-06-28", "stable",
 		[]string{
 			"Fixed: \"Mark as solved\" in Security AI could resolve every CVE finding on a device when only one was actually fixed (the two findings shared the same category+node key) — findings are now identified individually",
 			"Fixed: the licensing portal could report a successful registration/login while the session actually failed to save, leaving the user signed out with no explanation",
 			"Hardening: TOTP codes are compared in constant time; SSH template probing checks for a broken pipe instead of risking a crash; the pre-auth session store is swept periodically instead of growing unbounded; the scan-progress poll stops cleanly if you navigate away mid-scan",
 		},
-		repoURL + "/releases/tag/v1.17.1", "v1.17.1"},
+		downloadsRepo + "/releases", "v1.17.1"},
 	{"1.17.0", "2026-06-28", "stable",
 		[]string{
 			"Install your own TLS certificate the appliance way (like a NetScaler OVF): it still ships self-signed by design, and now you can point TLS_CERT_FILE / TLS_KEY_FILE at a cert mounted read-only anywhere (or drop cert.pem/key.pem into the data volume) and restart — the engine logs a reminder while still self-signed",
 			"The Windows desktop installer is now wired for optional Authenticode code-signing (fill in the cert thumbprint or a cloud-HSM sign command); see docs/CODE-SIGNING.md for the two-certificate distinction and step-by-step",
 		},
-		repoURL + "/releases/tag/v1.17.0", "v1.17.0"},
+		downloadsRepo + "/releases", "v1.17.0"},
 	{"1.16.0", "2026-06-28", "stable",
 		[]string{
 			"The appliance can now run a built-in, fully-offline AI: `docker compose --profile ai up` adds a local Ollama model server (pre-wired to the engine) so the Security AI answers in natural language with no cloud calls",
 			"It's opt-in because the model is a ~2 GB download; without the profile the engine is unchanged and falls back to the deterministic rules engine. Air-gapped sites can pre-seed the model volume",
 		},
-		repoURL + "/releases/tag/v1.16.0", "v1.16.0"},
+		downloadsRepo + "/releases", "v1.16.0"},
 	{"1.15.1", "2026-06-28", "stable",
 		[]string{
 			"Security: a session that's still on the factory password is now restricted server-side to the change-password screen only — it no longer relies on the browser to enforce the forced change",
 			"Security: the login lockout no longer trusts the X-Forwarded-For header by default (which an attacker could spoof to dodge the lockout); set TRUST_PROXY=1 only when the appliance sits behind a known reverse proxy",
 		},
-		repoURL + "/releases/tag/v1.15.1", "v1.15.1"},
+		downloadsRepo + "/releases", "v1.15.1"},
 	{"1.15.0", "2026-06-28", "stable",
 		[]string{
 			"The organization hub can now run on Postgres / Supabase instead of the built-in SQLite — set DATABASE_URL on the appliance and many desktops can fan in their scans concurrently, removing SQLite's single-writer ceiling for large estates",
 			"The desktop app is unchanged (local SQLite); only the shared hub benefits. The org tables were already partitioned per organization, so it's a drop-in switch with no data migration",
 		},
-		repoURL + "/releases/tag/v1.15.0", "v1.15.0"},
+		downloadsRepo + "/releases", "v1.15.0"},
 	{"1.14.0", "2026-06-28", "stable",
 		[]string{
 			"Security: org sync now pins the hub's TLS certificate on first contact (trust-on-first-use) instead of trusting any certificate — an on-path attacker can no longer intercept the licence token used to authenticate sync",
 			"Security: the credential master key can now be sealed with an external protector (LUMINA_MASTER_KEY or MASTER_KEY_FILE) so a stolen lumina.db no longer reveals stored credentials; without it the key stays in the DB (with a warning) for backward compatibility",
 			"Re-saving the org hub URL re-pins the certificate — the escape hatch after a legitimate hub cert rotation",
 		},
-		repoURL + "/releases/tag/v1.14.0", "v1.14.0"},
+		downloadsRepo + "/releases", "v1.14.0"},
 	{"1.13.3", "2026-06-14", "stable",
 		[]string{
 			"Fix: \"Clear assets\" now actually clears in org-sync mode — it also wipes the org store (local + hub) so the map no longer flickers and comes back",
 		},
-		repoURL + "/releases/tag/v1.13.3", "v1.13.3"},
+		downloadsRepo + "/releases", "v1.13.3"},
 	{"1.13.2", "2026-06-14", "stable",
 		[]string{
 			"Re-classifying an asset now also sets its protocol + credentials (e.g. 'Server' → RDP + Windows account), not just the icon",
 			"Security AI: 'Mark as solved' on any finding turns it green until the next scan re-checks it",
 			"New smartphone icon for phones/mobiles",
 		},
-		repoURL + "/releases/tag/v1.13.2", "v1.13.2"},
+		downloadsRepo + "/releases", "v1.13.2"},
 	{"1.13.1", "2026-06-14", "stable",
 		[]string{
 			"Fix: a wrong OTP no longer locks you out — the code can be retried (up to 5 times) without restarting the app",
 			"Fix: SSH/RDP to a NetScaler now opens with its credential (nsroot); the HA secondary is marked a NetScaler from the primary's 'show ha node'",
 			"New: a 'Set type…' picker on each asset to classify it by hand (no re-scan), and it sticks across scans",
 		},
-		repoURL + "/releases/tag/v1.13.1", "v1.13.1"},
+		downloadsRepo + "/releases", "v1.13.1"},
 	{"1.13.0", "2026-06-14", "stable",
 		[]string{
 			"Network printers/MFPs (any make) are detected (ports 9100/631/515) and get their own lime printer icon on the map",
 			"Topology layout: ring radius adapts to crowded segments and HA peers are placed snug side-by-side",
 			"Discovery ignores multicast/broadcast ARP noise so junk like 230.x never becomes a phantom node",
 		},
-		repoURL + "/releases/tag/v1.13.0", "v1.13.0"},
+		downloadsRepo + "/releases", "v1.13.0"},
 	{"1.12.3", "2026-06-13", "stable",
 		[]string{
 			"HA secondary is now authenticated with the primary's credentials (learned from 'show ha node') instead of showing as an ARP-only ghost",
 			"SSH/RDP 'Connect' now opens as the credential the host was discovered with (e.g. the NetScaler's nsroot), not your local account",
 		},
-		repoURL + "/releases/tag/v1.12.3", "v1.12.3"},
+		downloadsRepo + "/releases", "v1.12.3"},
 	{"1.12.2", "2026-06-13", "stable",
 		[]string{
 			"Org sync now pushes on a timer (not only after a scan), so existing assets converge without re-scanning",
 			"New sync indicator in Settings — Synced ✓ / last time / the exact error if a member's license was issued by a different portal",
 		},
-		repoURL + "/releases/tag/v1.12.2", "v1.12.2"},
+		downloadsRepo + "/releases", "v1.12.2"},
 	{"1.12.1", "2026-06-13", "stable",
 		[]string{
 			"Fix: org sync now works against the appliance's self-signed HTTPS (the desktop trusts its own org hub)",
 			"Fix: discovery no longer drops segments learned through a firewall's other leg (ARP-behind hosts are never auto-pruned)",
 			"Fix: HA sync links are drawn as a curved arc so they route around a node sitting between the pair",
 		},
-		repoURL + "/releases/tag/v1.12.1", "v1.12.1"},
+		downloadsRepo + "/releases", "v1.12.1"},
 	{"1.12.0", "2026-06-12", "stable",
 		[]string{
 			"Org sync complete: members pull the merged asset map (not just push), so every desktop shows the whole org's network",
 			"Org-wide settings sync — LDAP, idle timeout, and OTP/MFA are shared across the org (one TOTP secret everywhere, no more browser-vs-app mismatch)",
 			"New Organization Sync design doc on /docs",
 		},
-		repoURL + "/releases/tag/v1.12.0", "v1.12.0"},
+		downloadsRepo + "/releases", "v1.12.0"},
 	{"1.11.0", "2026-06-12", "stable",
 		[]string{
 			"Organization asset sync (stage 1): point every member at a shared appliance hub and scans push discovered assets to the org so everyone sees one merged map",
 			"Authenticated by your license key (Ed25519) and partitioned per organization; configure the hub URL in Settings (blank = standalone)",
 		},
-		repoURL + "/releases/tag/v1.11.0", "v1.11.0"},
+		downloadsRepo + "/releases", "v1.11.0"},
 	{"1.10.0", "2026-06-12", "stable",
 		[]string{
 			"Idle auto-logout (default 15 min, configurable in Settings, 0 = off) for the desktop app and the browser UI",
 			"Scans now auto-prune hosts that stop responding (3 missed scans on a swept subnet) so the map self-heals",
 			"Logged-in visitors see an account avatar (email initial) on the website instead of Sign in / Sign up",
 		},
-		repoURL + "/releases/tag/v1.10.0", "v1.10.0"},
+		downloadsRepo + "/releases", "v1.10.0"},
 	{"1.9.4", "2026-06-12", "stable",
 		[]string{
 			"New \"Clear assets\" button wipes the discovered map (keeps credentials/LDAP/license) to remove phantom/stale hosts left by an earlier scan",
 			"Topology map warns when running in appliance mode that layer-2 discovery (Wi-Fi/phones, NetScaler VIP folding) needs the desktop app",
 		},
-		repoURL + "/releases/tag/v1.9.4", "v1.9.4"},
+		downloadsRepo + "/releases", "v1.9.4"},
 	{"1.9.3", "2026-06-12", "stable",
 		[]string{
 			"Scan: the headless server/Docker appliance no longer lists its own container IP as a discovered asset",
 			"Clarified that full layer-2 (ARP/MAC, Wi-Fi, VIP folding) discovery needs to run from a host on the LAN",
 		},
-		repoURL + "/releases/tag/v1.9.3", "v1.9.3"},
+		downloadsRepo + "/releases", "v1.9.3"},
 	{"1.9.2", "2026-06-11", "stable",
 		[]string{
 			"Fix: license activation in the Dockerized server now reaches the portal by service name (PORTAL_URL=http://portal:8090) instead of 127.0.0.1",
 			"compose wires PORTAL_URL + depends_on so the all-in-Docker web UI activates out of the box",
 		},
-		repoURL + "/releases/tag/v1.9.2", "v1.9.2"},
+		downloadsRepo + "/releases", "v1.9.2"},
 	{"1.9.1", "2026-06-11", "stable",
 		[]string{
 			"Fix: production license activation no longer fails with \"connection refused [::1]:8090\" against a Dockerized portal (IPv4 fallback)",
 			"Update checks use the same IPv4 fallback; default portal URL is now 127.0.0.1",
 		},
-		repoURL + "/releases/tag/v1.9.1", "v1.9.1"},
+		downloadsRepo + "/releases", "v1.9.1"},
 	{"1.9.0", "2026-06-11", "stable",
 		[]string{
 			"Portal can now use an external Postgres / Supabase database (set DATABASE_URL) to manage registered &amp; paying users from a hosted dashboard",
 			"New payments table + billing scaffolding, ready to wire a payment provider (Stripe) when you start selling",
 			"Falls back to local SQLite when no DATABASE_URL is set; new Supabase setup guide under /docs",
 		},
-		repoURL + "/releases/tag/v1.9.0", "v1.9.0"},
+		downloadsRepo + "/releases", "v1.9.0"},
 	{"1.8.4", "2026-06-11", "stable",
 		[]string{
 			"Docs site now hosts the Security &amp; Firewall Hardening guide (PDF) and deployment notes under /docs",
 			"Guides are embedded in the portal binary and served with a new Guides &amp; downloads section",
 		},
-		repoURL + "/releases/tag/v1.8.4", "v1.8.4"},
+		downloadsRepo + "/releases", "v1.8.4"},
 	{"1.8.3", "2026-06-11", "stable",
 		[]string{
 			"Fix: appliance licensing portal now starts in Docker (writable data dir + DATA_DIR support)",
 			"Portal stores its database under /data so registrations &amp; sessions persist across restarts",
 		},
-		repoURL + "/releases/tag/v1.8.3", "v1.8.3"},
+		downloadsRepo + "/releases", "v1.8.3"},
 	{"1.8.2", "2026-06-10", "stable",
 		[]string{
 			"Fix: \"Upgrade Now\" now reliably opens the registration portal (popup-blocker)",
 			"Portal keeps you signed in with a session cookie — your license &amp; download persist",
 		},
-		repoURL + "/releases/tag/v1.8.2", "v1.8.2"},
+		downloadsRepo + "/releases", "v1.8.2"},
 	{"1.8.1", "2026-06-10", "stable",
 		[]string{
 			"Docker compose now publishes the HTTPS UI on host port 443 (self-signed cert out of the box)",
 			"Documented host-networking option for full LAN (ARP) discovery on the appliance",
 		},
-		repoURL + "/releases/tag/v1.8.1", "v1.8.1"},
+		downloadsRepo + "/releases", "v1.8.1"},
 	{"1.8.0", "2026-06-10", "stable",
 		[]string{
 			"\"Explain my posture\" — one-click AI summary &amp; prioritized remediation plan (local model, offline)",
 			"Falls back to a deterministic summary when no local AI is available",
 		},
-		repoURL + "/releases/tag/v1.8.0", "v1.8.0"},
+		downloadsRepo + "/releases", "v1.8.0"},
 	{"1.7.0", "2026-06-10", "stable",
 		[]string{
 			"Built-in local AI (Ollama) — offline natural-language answers grounded in your topology &amp; findings",
 			"HTTPS with an auto-generated self-signed cert (admin-replaceable) for the server/appliance",
 			"Security &amp; firewall hardening guide (PDF)",
 		},
-		repoURL + "/releases/tag/v1.7.0", "v1.7.0"},
+		downloadsRepo + "/releases", "v1.7.0"},
 	{"1.6.1", "2026-06-08", "stable",
 		[]string{
 			"LLDP/CDP layer-2 links drawn as bold emerald 'L2' edges on the map",
 			"Downloads now require registration; release nav matches the home page",
 		},
-		repoURL + "/releases/tag/v1.6.1", "v1.6.1"},
+		downloadsRepo + "/releases", "v1.6.1"},
 	{"1.6.0", "2026-06-08", "stable",
 		[]string{
 			"SNMPv3 (NoAuthNoPriv) with automatic v2c fallback",
@@ -328,13 +343,13 @@ var releases = []Release{
 			"Real SNMP throughput (Gbps) on gateways; v3/v2c node badge",
 			"In-app version notifications: auto / manual update + What's New",
 		},
-		repoURL + "/releases/tag/v1.6.0", "v1.6.0"},
+		downloadsRepo + "/releases", "v1.6.0"},
 	{"1.5.0", "2026-06-08", "stable",
 		[]string{"Security posture score + history trend", "PDF/CSV export", "Per-segment risk drill-down"},
-		repoURL + "/releases/tag/v1.5.0", "v1.5.0"},
+		downloadsRepo + "/releases", "v1.5.0"},
 	{"1.4.0", "2026-06-03", "stable",
 		[]string{"30+ vendor drivers with serial/uptime/build", "Network-learned Security AI + 0-100 score", "Multi-homed + HA + ARP-behind-gateway"},
-		repoURL + "/releases/tag/v1.4.0", "v1.4.0"},
+		downloadsRepo + "/releases", "v1.4.0"},
 }
 
 func latestHandler(w http.ResponseWriter, r *http.Request) {
@@ -359,7 +374,7 @@ func releasesAPIHandler(w http.ResponseWriter, r *http.Request) {
 
 func releasesPageHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = releasesTmpl.Execute(w, map[string]any{"Releases": releases, "Repo": repoURL})
+	_ = releasesTmpl.Execute(w, map[string]any{"Releases": releases, "Repo": downloadsRepo})
 }
 
 var releasesTmpl = template.Must(template.New("rel").Funcs(template.FuncMap{

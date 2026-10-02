@@ -32,7 +32,7 @@ func TestLandingTemplateRenders(t *testing.T) {
 // Ensures the releases template + /api/latest data render correctly.
 func TestReleasesTemplateRenders(t *testing.T) {
 	var sb strings.Builder
-	if err := releasesTmpl.Execute(&sb, map[string]any{"Releases": releases, "Repo": repoURL}); err != nil {
+	if err := releasesTmpl.Execute(&sb, map[string]any{"Releases": releases, "Repo": downloadsRepo}); err != nil {
 		t.Fatalf("releases template execute failed: %v", err)
 	}
 	out := sb.String()
@@ -41,8 +41,8 @@ func TestReleasesTemplateRenders(t *testing.T) {
 			t.Errorf("releases page missing %q", want)
 		}
 	}
-	if len(releases) == 0 || releases[0].Version != "1.27.1" {
-		t.Errorf("latest release should be 1.27.1, got %+v", releases)
+	if len(releases) == 0 || releases[0].Version != "1.27.2" {
+		t.Errorf("latest release should be 1.27.2, got %+v", releases)
 	}
 }
 
