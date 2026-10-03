@@ -33,12 +33,20 @@ type Release struct {
 // is private, so its release pages 404 for customers).
 const downloadsRepo = "https://github.com/Benny007-king/lumina-netos-releases"
 
-// installerURL is a direct download of the newest Windows installer: every
-// release uploads it under this stable asset name.
-const installerURL = downloadsRepo + "/releases/latest/download/LuminaNetOS-Setup-x64.exe"
+
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.31.0", "2026-10-03", "stable",
+		[]string{
+			"Settings → Updates: \"Check for updates\" finds a newer version and installs it only when you confirm; the app closes, updates in place and reopens. No more pop-up at startup",
+			"Offline updates: for machines without internet, download the signed offline update package (.lupdate) from the customer portal on a connected computer and install it from Settings → Updates → Install from file",
+			"Every update package is signature-checked by the app before it runs — a modified or foreign file is rejected",
+			"Downloads are for customers only: installers and update packages are handed out by the portal to signed-in accounts and licensed installations",
+			"Much faster scans: dead addresses no longer wait for SNMP timeouts, more hosts are probed in parallel, neighbours are probed in parallel, and the crawler no longer sweeps load-balancer VIP or public subnets",
+			"Devices appear on the map while the scan runs (dashed, pulsing ring until the scan finishes) instead of only at the end",
+		},
+		downloadsRepo + "/releases/tag/v1.31.0", "v1.31.0"},
 	{"1.30.0", "2026-10-02", "stable",
 		[]string{
 			"RDP single sign-on: Connect → RDP logs into Windows servers with the credential they were scanned with. The password is placed in Windows Credential Manager for that host only, for this logon only, and removed again 90 seconds later; a credential you saved yourself is never touched",
@@ -390,7 +398,22 @@ func latestHandler(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 404, map[string]string{"error": "no releases"})
 		return
 	}
-	writeJSON(w, 200, releases[0])
+	writeJSON(w, 200, withPortalDownloads(r, releases[:1])[0])
+}
+
+// withPortalDownloads points each release's download link at this portal's
+// gated download (sign-in required) instead of the file host.
+func withPortalDownloads(r *http.Request, rels []Release) []Release {
+	scheme := "http"
+	if isHTTPS(r) {
+		scheme = "https"
+	}
+	out := make([]Release, len(rels))
+	for i, rel := range rels {
+		rel.DownloadURL = scheme + "://" + r.Host + "/download/installer?version=" + rel.Version
+		out[i] = rel
+	}
+	return out
 }
 
 func releasesAPIHandler(w http.ResponseWriter, r *http.Request) {
@@ -398,12 +421,12 @@ func releasesAPIHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodOptions {
 		return
 	}
-	writeJSON(w, 200, releases)
+	writeJSON(w, 200, withPortalDownloads(r, releases))
 }
 
 func releasesPageHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = releasesTmpl.Execute(w, map[string]any{"Releases": releases, "Repo": downloadsRepo})
+	_ = releasesTmpl.Execute(w, map[string]any{"Releases": releases})
 }
 
 var releasesTmpl = template.Must(template.New("rel").Funcs(template.FuncMap{
@@ -475,5 +498,5 @@ footer{padding:40px 0;border-top:1px solid var(--brd);color:var(--mut);font-size
   </div>
 {{end}}
 </div>
-<footer class="wrap">© 2026 Lumina NetOS · <a href="/">Home</a> · <a href="{{.Repo}}" target="_blank" rel="noopener">GitHub</a></footer>
+<footer class="wrap">© 2026 Lumina NetOS · <a href="/">Home</a> · <a href="/download/installer">Download</a></footer>
 </body></html>`

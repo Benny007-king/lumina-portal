@@ -212,7 +212,7 @@ func pubkeyHandler(w http.ResponseWriter, r *http.Request) {
 func signupHandler(w http.ResponseWriter, r *http.Request) {
 	dl := os.Getenv("DOWNLOAD_URL")
 	if dl == "" {
-		dl = installerURL
+		dl = "/download/installer" // gated: needs this signed-in session
 	}
 	html := strings.ReplaceAll(portalHTML, "%%DOWNLOAD_URL%%", dl)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -256,6 +256,8 @@ func main() {
 	http.HandleFunc("/releases", releasesPageHandler) // version history page
 	http.HandleFunc("/api/latest", latestHandler)     // newest release (app polls this)
 	http.HandleFunc("/api/releases", releasesAPIHandler)
+	http.HandleFunc("/download/", downloadHandler)                // signed-in customers only
+	http.HandleFunc("/api/update/package", updatePackageHandler) // licensed engines only
 	http.HandleFunc("/signup", signupHandler)   // register / login app
 	http.HandleFunc("/api/register", registerHandler)
 	http.HandleFunc("/api/login", loginHandler)

@@ -94,6 +94,7 @@ const portalHTML = `<!DOCTYPE html>
       together with your admin password to activate. Keep it safe, it identifies your organization.
     </p>
     <a class="btn" href="%%DOWNLOAD_URL%%" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;background:linear-gradient(120deg,#6366f1,#06b6d4);margin-bottom:10px;">⬇ Download Lumina NetOS</a>
+    <a href="/download/offline" style="display:block;text-align:center;font-size:12px;color:#94a3b8;margin:-2px 0 12px;">Offline update package (.lupdate) — for machines without internet</a>
     <button class="btn" onclick="revokeKey()" style="background:#7f1d1d;margin-bottom:10px;">Revoke &amp; Reissue Key</button>
     <button class="btn" onclick="signOut()" style="background:#1e293b;">Sign out</button>
   </div>
