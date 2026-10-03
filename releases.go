@@ -37,6 +37,11 @@ const downloadsRepo = "https://github.com/Benny007-king/lumina-netos-releases"
 
 // releases — newest first. Add a new entry (and push a matching git tag) per release.
 var releases = []Release{
+	{"1.31.1", "2026-10-03", "stable",
+		[]string{
+			"Simpler offline update: in Settings → Updates, drag the .lupdate file onto the drop zone (or click to choose it). The app verifies it and shows the version with \"Signature verified\"; one click on Update installs it in the background and the app reopens by itself",
+		},
+		downloadsRepo + "/releases/tag/v1.31.1", "v1.31.1"},
 	{"1.31.0", "2026-10-03", "stable",
 		[]string{
 			"Settings → Updates: \"Check for updates\" finds a newer version and installs it only when you confirm; the app closes, updates in place and reopens. No more pop-up at startup",
